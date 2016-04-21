@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                       CnPack For Delphi/C++Builder                           }
 {                     中国人自己的开放源码第三方开发包                         }
-{                   (C)Copyright 2001-2008 CnPack 开发组                       }
+{                   (C)Copyright 2001-2016 CnPack 开发组                       }
 {                   ------------------------------------                       }
 {                                                                              }
 {            本开发包是开源的自由软件，您可以遵照 CnPack 的发布协议来修        }
@@ -38,7 +38,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, ShellCtrls, ExtCtrls, IniFiles, Buttons, XPMan,
+  Dialogs, StdCtrls, ComCtrls, ShellCtrls, ExtCtrls, IniFiles, Buttons,
   CnCommon;
 
 type
@@ -70,6 +70,10 @@ type
     edtDst: TEdit;
     btnSrcDir: TSpeedButton;
     btnDstDir: TSpeedButton;
+    lbl5: TLabel;
+    edtIgnoreFile: TEdit;
+    lbl6: TLabel;
+    edtIgnoreDir: TEdit;
     procedure btnAddClick(Sender: TObject);
     procedure btnDelClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
@@ -97,6 +101,9 @@ type
     FCopyCnt: Integer;
     FDelCnt: Integer;
     FSrcDir, FDstDir: string;
+    FIgnoreFiles, FIgnoreDirs: TStringList;
+    function IsIgonreFile(const AName: string): Boolean;
+    function IsIgonreDir(const AName: string): Boolean;
     procedure SaveToFile(const FileName: string);
     procedure LoadFromFile(const FileName: string);
     procedure UpdateIndex;
@@ -106,7 +113,9 @@ type
       var Abort: Boolean);
     procedure FileDelProc(const FileName: string; const Info: TSearchRec;
       var Abort: Boolean);
-    procedure DirDelProc(const SubDir: string);
+    procedure DirCntProc(const SubDir: string; var bSub: Boolean);
+    procedure DirDelProc(const SubDir: string; var bSub: Boolean);
+    procedure DirSyncProc(const SubDir: string; var bSub: Boolean);
   public
     { Public declarations }
   end;
@@ -118,17 +127,127 @@ implementation
 
 {$R *.dfm}
 
+type
+  TFindCallBack = procedure(const FileName: string; const Info: TSearchRec;
+    var Abort: Boolean) of object;
+
+  TDirCallBack = procedure(const SubDir: string; var bSub: Boolean) of object;
+
+var
+  FindAbort: Boolean;
+
+// 查找指定目录下文件
+function FindFile(const Path: string; const FileName: string = '*.*';
+  Proc: TFindCallBack = nil; DirProc: TDirCallBack = nil; bSub: Boolean = True;
+  bMsg: Boolean = True): Boolean;
+
+  procedure DoFindFile(const Path, SubPath: string; const FileName: string;
+    Proc: TFindCallBack; DirProc: TDirCallBack; bSub: Boolean;
+    bMsg: Boolean);
+  var
+    APath: string;
+    Info: TSearchRec;
+    Succ: Integer;
+    inSub: Boolean;
+  begin
+    FindAbort := False;
+    APath := MakePath(MakePath(Path) + SubPath);
+    Succ := FindFirst(APath + FileName, faAnyFile - faVolumeID, Info);
+    try
+      while Succ = 0 do
+      begin
+        if (Info.Name <> '.') and (Info.Name <> '..') then
+        begin
+          if (Info.Attr and faDirectory) <> faDirectory then
+          begin
+            if Assigned(Proc) then
+              Proc(APath + Info.FindData.cFileName, Info, FindAbort);
+          end
+        end;
+        if bMsg then
+          Application.ProcessMessages;
+        if FindAbort then
+          Exit;
+        Succ := FindNext(Info);
+      end;
+    finally
+      FindClose(Info);
+    end;
+
+    if bSub then
+    begin
+      Succ := FindFirst(APath + '*.*', faAnyFile - faVolumeID, Info);
+      try
+        while Succ = 0 do
+        begin
+          if (Info.Name <> '.') and (Info.Name <> '..') and
+            (Info.Attr and faDirectory = faDirectory) then
+          begin
+            inSub := bSub;
+            if Assigned(DirProc) then
+              DirProc(MakePath(SubPath) + Info.Name, inSub);
+            if inSub then
+            begin
+              DoFindFile(Path, MakePath(SubPath) + Info.Name, FileName, Proc,
+                DirProc, bSub, bMsg);
+            end;
+            if FindAbort then
+              Exit;
+          end;
+          Succ := FindNext(Info);
+        end;
+      finally
+        FindClose(Info);
+      end;
+    end;
+  end;
+
+begin
+  DoFindFile(Path, '', FileName, Proc, DirProc, bSub, bMsg);
+  Result := not FindAbort;
+end;
+
 { TSSMainForm }
 
 procedure TSSMainForm.FormCreate(Sender: TObject);
 begin
   Application.Title := Caption;
+  FIgnoreFiles := TStringList.Create;
+  FIgnoreDirs := TStringList.Create;
   LoadFromFile(ChangeFileExt(Application.ExeName, '.ssb'));
 end;
 
 procedure TSSMainForm.FormDestroy(Sender: TObject);
 begin
   SaveToFile(ChangeFileExt(Application.ExeName, '.ssb'));
+  FIgnoreFiles.Free;
+  FIgnoreDirs.Free;
+end;
+
+function TSSMainForm.IsIgonreDir(const AName: string): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to FIgnoreDirs.Count - 1 do
+    if (Trim(FIgnoreDirs[i]) <> '') and (MatchFileName(AName, Trim(FIgnoreDirs[i]))) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  Result := False;
+end;
+
+function TSSMainForm.IsIgonreFile(const AName: string): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to FIgnoreFiles.Count - 1 do
+    if (Trim(FIgnoreFiles[i]) <> '') and (MatchFileName(AName, Trim(FIgnoreFiles[i]))) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  Result := False;
 end;
 
 procedure TSSMainForm.btnAddClick(Sender: TObject);
@@ -150,6 +269,8 @@ begin
       Caption := IntToStr(Index + 1);
       SubItems.Add(edtSrc.Text);
       SubItems.Add(edtDst.Text);
+      SubItems.Add(edtIgnoreFile.Text);
+      SubItems.Add(edtIgnoreDir.Text);
       if chkIncSub.Checked then
         SubItems.Add('包含')
       else
@@ -205,6 +326,8 @@ begin
         Caption := IntToStr(i);
         SubItems.Add(ReadString(IntToStr(i), 'SrcDir', ''));
         SubItems.Add(ReadString(IntToStr(i), 'DstDir', ''));
+        SubItems.Add(ReadString(IntToStr(i), 'IgnoreFiles', ''));
+        SubItems.Add(ReadString(IntToStr(i), 'IgnoreDirs', ''));
         SubItems.Add(ReadString(IntToStr(i), 'IncSub', ''));
       end;
       Inc(i);
@@ -225,7 +348,9 @@ begin
     begin
       WriteString(ListView.Items[i].Caption, 'SrcDir', ListView.Items[i].SubItems[0]);
       WriteString(ListView.Items[i].Caption, 'DstDir', ListView.Items[i].SubItems[1]);
-      WriteString(ListView.Items[i].Caption, 'IncSub', ListView.Items[i].SubItems[2]);
+      WriteString(ListView.Items[i].Caption, 'IgnoreFiles', ListView.Items[i].SubItems[2]);
+      WriteString(ListView.Items[i].Caption, 'IgnoreDirs', ListView.Items[i].SubItems[3]);
+      WriteString(ListView.Items[i].Caption, 'IncSub', ListView.Items[i].SubItems[4]);
     end;
   finally
     UpdateFile;
@@ -285,9 +410,11 @@ begin
       for i := 0 to ListView.Items.Count - 1 do
       begin
         FSrcDir := MakePath(ListView.Items[i].SubItems[0]);
+        FIgnoreFiles.CommaText := ListView.Items[i].SubItems[2];
+        FIgnoreDirs.CommaText := ListView.Items[i].SubItems[3];
         FCurrMsg := '正在统计: ' + FSrcDir;
-        FindFile(FSrcDir, '*.*', FileCntProc, nil,
-          ListView.Items[i].SubItems[2] <> '', True);
+        FindFile(FSrcDir, '*.*', FileCntProc, DirCntProc,
+          ListView.Items[i].SubItems[4] <> '', True);
         if FAbort then
           Exit;
       end;
@@ -298,13 +425,15 @@ begin
       begin
         FSrcDir := MakePath(ListView.Items[i].SubItems[0]);
         FDstDir := MakePath(ListView.Items[i].SubItems[1]);
+        FIgnoreFiles.CommaText := ListView.Items[i].SubItems[2];
+        FIgnoreDirs.CommaText := ListView.Items[i].SubItems[3];
         // 先删除目标目录中的旧文件
         FCurrMsg := '正在处理: ' + FSrcDir;
         FindFile(FDstDir, '*.*', FileDelProc, DirDelProc,
-          ListView.Items[i].SubItems[2] <> '', True);
+          ListView.Items[i].SubItems[4] <> '', True);
         // 再复制源目录中的新文件
-        FindFile(FSrcDir, '*.*', FileSyncProc, nil,
-          ListView.Items[i].SubItems[2] <> '', True);
+        FindFile(FSrcDir, '*.*', FileSyncProc, DirSyncProc,
+          ListView.Items[i].SubItems[4] <> '', True);
         if FAbort then
           Exit;
       end;
@@ -329,7 +458,7 @@ begin
     '夹中大小或日期变更过的文件，并删除目标文件夹中不存'#13#10 +
     '在于源文件夹的文件和目录。'#13#10#13#10 +
     '软件作者 周劲羽 (zjy@cnpack.org)'#13#10 +
-    '版权所有 (C)2001-2008 CnPack 开发组');
+    '版权所有 (C)2001-2016 CnPack 开发组');
 end;
 
 procedure TSSMainForm.btnExitClick(Sender: TObject);
@@ -372,7 +501,8 @@ end;
 procedure TSSMainForm.FileCntProc(const FileName: string;
   const Info: TSearchRec; var Abort: Boolean);
 begin
-  Inc(FFileCnt);
+  if not IsIgonreFile(ExtractFileName(FileName)) then
+    Inc(FFileCnt);
   Abort := FAbort;
 end;
 
@@ -387,29 +517,45 @@ begin
     Exit;
   end;
 
-  DstName := FDstDir + Copy(FileName, Length(FSrcDir) + 1, MaxInt);
-  if not FileExists(DstName) or (GetFileSize(FileName) <> GetFileSize(DstName))
-    or (GetFileDateTime(FileName) <> GetFileDateTime(DstName)) then
+  if not IsIgonreFile(ExtractFileName(FileName)) then
   begin
-    ForceDirectories(ExtractFileDir(DstName));
-    FCurrMsg := '正在复制: ' + FileName;
-    SetFileAttributes(PChar(DstName), FILE_ATTRIBUTE_NORMAL);  // 去掉只读属性
-    DeleteFile(DstName); // 先删除文件再复制以避免属性和日期不同
-    CopyFile(PChar(FileName), PChar(DstName), False);
-    Inc(FCopyCnt);
-  end;
+    DstName := FDstDir + Copy(FileName, Length(FSrcDir) + 1, MaxInt);
+    if not FileExists(DstName) or (GetFileSize(FileName) <> GetFileSize(DstName))
+      or (GetFileDateTime(FileName) <> GetFileDateTime(DstName)) then
+    begin
+      ForceDirectories(ExtractFileDir(DstName));
+      FCurrMsg := '正在复制: ' + FileName;
+      SetFileAttributes(PChar(DstName), FILE_ATTRIBUTE_NORMAL);  // 去掉只读属性
+      DeleteFile(DstName); // 先删除文件再复制以避免属性和日期不同
+      CopyFile(PChar(FileName), PChar(DstName), False);
+      Inc(FCopyCnt);
+    end;
 
-  Inc(FProcCnt);
+    Inc(FProcCnt);
+  end;
 end;
 
-procedure TSSMainForm.DirDelProc(const SubDir: string);
+procedure TSSMainForm.DirCntProc(const SubDir: string; var bSub: Boolean);
 begin
-  if not DirectoryExists(FSrcDir + SubDir) then
+  bSub := not IsIgonreDir(SubDir);
+end;
+
+procedure TSSMainForm.DirDelProc(const SubDir: string; var bSub: Boolean);
+begin
+  if not DirectoryExists(FSrcDir + SubDir) or IsIgonreDir(SubDir) then
   begin
     FCurrMsg := '正在删除: ' + FDstDir + SubDir;
     Deltree(FDstDir + SubDir);
     Inc(FDelCnt);
-  end;
+    bSub := False;
+  end
+  else
+    bSub := True;
+end;
+
+procedure TSSMainForm.DirSyncProc(const SubDir: string; var bSub: Boolean);
+begin
+  bSub := not IsIgonreDir(SubDir);
 end;
 
 procedure TSSMainForm.FileDelProc(const FileName: string;
@@ -424,7 +570,7 @@ begin
   end;
 
   SrcName := FSrcDir + Copy(FileName, Length(FDstDir) + 1, MaxInt);
-  if not FileExists(SrcName) then
+  if not FileExists(SrcName) or IsIgonreFile(ExtractFileName(FileName)) then
   begin
     FCurrMsg := '正在删除: ' + FileName;
     SetFileAttributes(PChar(FileName), FILE_ATTRIBUTE_NORMAL);

@@ -1,10 +1,9 @@
 object SSMainForm: TSSMainForm
   Left = 268
   Top = 159
-  AutoScroll = False
-  Caption = #25991#20214#22841#26234#33021#21516#27493#24037#20855' V1.0'
-  ClientHeight = 433
-  ClientWidth = 598
+  Caption = #25991#20214#22841#26234#33021#21516#27493#24037#20855' V1.1'
+  ClientHeight = 422
+  ClientWidth = 590
   Color = clBtnFace
   Constraints.MinHeight = 460
   Constraints.MinWidth = 606
@@ -21,44 +20,46 @@ object SSMainForm: TSSMainForm
   TextHeight = 12
   object StatusBar: TStatusBar
     Left = 0
-    Top = 414
-    Width = 598
+    Top = 403
+    Width = 590
     Height = 19
     Panels = <>
     SimplePanel = True
   end
   object pnl1: TPanel
     Left = 0
-    Top = 89
-    Width = 598
-    Height = 325
+    Top = 105
+    Width = 590
+    Height = 298
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
     DesignSize = (
-      598
-      325)
+      590
+      298)
     object lbl3: TLabel
       Left = 8
-      Top = 8
+      Top = 6
       Width = 54
       Height = 12
       Caption = #22791#20221#21015#34920':'
     end
     object lbl4: TLabel
-      Left = 357
-      Top = 299
+      Left = 349
+      Top = 272
       Width = 150
       Height = 12
       Anchors = [akRight, akBottom]
       Caption = #24050#29992' 0:00:00 '#21097#20313' 0:00:00'
+      ExplicitLeft = 357
+      ExplicitTop = 299
     end
     object ListView: TListView
       Tag = 1
       Left = 8
       Top = 24
-      Width = 510
-      Height = 263
+      Width = 502
+      Height = 236
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -67,11 +68,19 @@ object SSMainForm: TSSMainForm
         end
         item
           Caption = #28304#25991#20214#22841
-          Width = 200
+          Width = 100
         end
         item
           Caption = #30446#26631#25991#20214#22841
-          Width = 200
+          Width = 100
+        end
+        item
+          Caption = #24573#30053#25991#20214
+          Width = 100
+        end
+        item
+          Caption = #24573#30053#30446#24405
+          Width = 100
         end
         item
           Caption = #23376#25991#20214#22841
@@ -86,7 +95,7 @@ object SSMainForm: TSSMainForm
     end
     object btnAdd: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 23
       Width = 65
       Height = 21
@@ -97,7 +106,7 @@ object SSMainForm: TSSMainForm
     end
     object btnDel: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 48
       Width = 65
       Height = 21
@@ -108,7 +117,7 @@ object SSMainForm: TSSMainForm
     end
     object btnClear: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 72
       Width = 65
       Height = 21
@@ -119,7 +128,7 @@ object SSMainForm: TSSMainForm
     end
     object btnUp: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 97
       Width = 65
       Height = 21
@@ -130,7 +139,7 @@ object SSMainForm: TSSMainForm
     end
     object btnDown: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 122
       Width = 65
       Height = 21
@@ -141,7 +150,7 @@ object SSMainForm: TSSMainForm
     end
     object btnImport: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 146
       Width = 65
       Height = 21
@@ -152,7 +161,7 @@ object SSMainForm: TSSMainForm
     end
     object btnExport: TButton
       Tag = 1
-      Left = 525
+      Left = 517
       Top = 171
       Width = 65
       Height = 21
@@ -162,8 +171,8 @@ object SSMainForm: TSSMainForm
       OnClick = btnExportClick
     end
     object btnExecute: TButton
-      Left = 525
-      Top = 294
+      Left = 517
+      Top = 267
       Width = 65
       Height = 21
       Anchors = [akRight, akBottom]
@@ -173,30 +182,30 @@ object SSMainForm: TSSMainForm
     end
     object pb1: TProgressBar
       Left = 8
-      Top = 297
-      Width = 342
+      Top = 270
+      Width = 334
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
       TabOrder = 11
     end
     object btnAbout: TButton
       Tag = 1
-      Left = 525
-      Top = 243
+      Left = 516
+      Top = 217
       Width = 65
       Height = 21
-      Anchors = [akTop, akRight]
+      Anchors = [akRight, akBottom]
       Caption = #20851#20110'(&B)'
       TabOrder = 8
       OnClick = btnAboutClick
     end
     object btnExit: TButton
       Tag = 1
-      Left = 525
-      Top = 267
+      Left = 516
+      Top = 241
       Width = 65
       Height = 21
-      Anchors = [akTop, akRight]
+      Anchors = [akRight, akBottom]
       Caption = #36864#20986'(&X)'
       TabOrder = 9
       OnClick = btnExitClick
@@ -205,14 +214,14 @@ object SSMainForm: TSSMainForm
   object pnl2: TPanel
     Left = 0
     Top = 0
-    Width = 598
-    Height = 89
+    Width = 590
+    Height = 105
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
     DesignSize = (
-      598
-      89)
+      590
+      105)
     object lbl1: TLabel
       Left = 8
       Top = 8
@@ -222,13 +231,13 @@ object SSMainForm: TSSMainForm
     end
     object lbl2: TLabel
       Left = 8
-      Top = 44
+      Top = 38
       Width = 66
       Height = 12
       Caption = #30446#26631#25991#20214#22841':'
     end
     object btnSrcDir: TSpeedButton
-      Left = 565
+      Left = 558
       Top = 8
       Width = 23
       Height = 22
@@ -237,30 +246,44 @@ object SSMainForm: TSSMainForm
       OnClick = btnSrcDirClick
     end
     object btnDstDir: TSpeedButton
-      Left = 565
-      Top = 40
+      Left = 558
+      Top = 34
       Width = 23
       Height = 22
       Anchors = [akTop, akRight]
       Caption = '...'
       OnClick = btnDstDirClick
     end
+    object lbl5: TLabel
+      Left = 8
+      Top = 64
+      Width = 54
+      Height = 12
+      Caption = #24573#30053#25991#20214':'
+    end
+    object lbl6: TLabel
+      Left = 278
+      Top = 63
+      Width = 54
+      Height = 12
+      Caption = #24573#30053#30446#24405':'
+    end
     object chkIncSub: TCheckBox
       Tag = 1
-      Left = 80
-      Top = 72
+      Left = 79
+      Top = 88
       Width = 145
       Height = 17
       Caption = #21253#21547#23376#25991#20214#22841'(&S)'
       Checked = True
       State = cbChecked
-      TabOrder = 2
+      TabOrder = 4
     end
     object edtSrc: TEdit
       Tag = 1
-      Left = 80
+      Left = 79
       Top = 8
-      Width = 478
+      Width = 472
       Height = 20
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 0
@@ -268,11 +291,34 @@ object SSMainForm: TSSMainForm
     object edtDst: TEdit
       Tag = 1
       Left = 79
-      Top = 40
-      Width = 479
+      Top = 34
+      Width = 473
       Height = 20
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 1
+    end
+    object edtIgnoreFile: TEdit
+      Tag = 1
+      Left = 79
+      Top = 60
+      Width = 186
+      Height = 20
+      Hint = #25903#25345#26631#20934#36890#37197#31526#65292#22810#39033#20197#36887#21495#20998#38548
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 2
+    end
+    object edtIgnoreDir: TEdit
+      Tag = 1
+      Left = 349
+      Top = 60
+      Width = 203
+      Height = 20
+      Hint = #25903#25345#26631#20934#36890#37197#31526#65292#22810#39033#20197#36887#21495#20998#38548
+      Anchors = [akLeft, akTop, akRight]
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 3
     end
   end
   object dlgOpen: TOpenDialog
